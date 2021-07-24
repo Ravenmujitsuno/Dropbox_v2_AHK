@@ -99,6 +99,7 @@ WinHttpRequest( URL, ByRef In_POST__Out_Data="", ByRef In_Out_HEADERS="", Option
 
 		In_POST__Out_Data := ""
 	}
+
 	Else If InStr(Options, "Charset:")
 	{
 		RegExMatch(Options, "i)Charset:[ \t]*\K[\w-]+", Encoding)

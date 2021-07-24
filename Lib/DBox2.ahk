@@ -48,8 +48,7 @@
             ; CreateFolder() - Creates a folder.
 */
 
-#Include Lib\WinHttpRequest.ahk
-#Include Lib\json.ahk
+
 
 class DBox2
 {
@@ -94,6 +93,7 @@ class DBox2
       , this.AccessToken := AccessToken
     ;   , this.OauthToken := OauthToken
     ;   , this.OauthTokenSecret := OauthTokenSecret
+    
     }
     
 
@@ -134,7 +134,8 @@ class DBox2
         OutputDebug % "Search.OutHeader = " InOutHeader "`n"
         OutputDebug % "Search.OutData = " InOutData "`n"
 
-        WinHttpRequest(this.SEARCH_URL, InOutData, InOutHeader, "Proxy:localhost:8888")
+        ; WinHttpRequest(this.SEARCH_URL, InOutData, InOutHeader, "Proxy:localhost:8888")
+        WinHttpRequest(this.SEARCH_URL, InOutData, InOutHeader)
         
         OutputDebug % "========================= Search IN =========================`n"
         OutputDebug % "Search.InHeader = " InOutHeader "`n"
@@ -168,7 +169,8 @@ class DBox2
         OutputDebug % "TemporaryLink.OutHeader = " InOutHeader "`n"
         OutputDebug % "TemporaryLink.OutData = " InOutData "`n"
 
-        WinHttpRequest(this.TEMPORARY_LINK, InOutData, InOutHeader, "Charset:UTF-8`nProxy:localhost:8888")
+        ; WinHttpRequest(this.TEMPORARY_LINK, InOutData, InOutHeader, "Charset:UTF-8`nProxy:localhost:8888")
+        WinHttpRequest(this.TEMPORARY_LINK, InOutData, InOutHeader, "Charset:UTF-8")
         
         OutputDebug % "========================= TemporaryLink IN =========================`n"
         OutputDebug % "TemporaryLink.InHeader = " InOutHeader "`n"
@@ -206,7 +208,8 @@ class DBox2
         OutputDebug % "Metadata.OutHeader = " InOutHeader "`n"
         OutputDebug % "Metadata.OutData = " InOutData "`n"
 
-        WinHttpRequest(this.METADATA_URL, InOutData, InOutHeader, "Charset:UTF-8`nProxy:localhost:8888")
+        ; WinHttpRequest(this.METADATA_URL, InOutData, InOutHeader, "Charset:UTF-8`nProxy:localhost:8888")
+        WinHttpRequest(this.METADATA_URL, InOutData, InOutHeader, "Charset:UTF-8")
         
         
         OutputDebug % "========================= Metadata In =========================`n"
@@ -243,18 +246,23 @@ class DBox2
     {
 
         DBarg = {"path":"%uploadFolder%/%name%","mode":{".tag":"overwrite"},"autorename":false}
-        
+        uploadFile = %locPath%%name%
         If (binaryTrue = "1")
         {
+
+            ; oFile := FileOpen(uploadFile, "r")
+            ; FileSize := oFile.RawRead(data, 50000000)
+            InOutData := this.FileToSafeArray(uploadFile)
+            ; msgbox, file size = %FileSize%
+            ; oFile2 := FileOpen("d:\copy_of_" . name, "w")
+            ; oFile2.RawWrite(data, FileSize)
+
+             
             InOutHeader := ""
                 . "Authorization: " this.AccessToken 
                 . "`nContent-Type:  application/octet-stream"
                 . "`nDropbox-API-Arg: " DBarg
-
-            Set InOutData = new ComObjCreate("adodb.stream")
-            InOutData.Type = adTypeBinary
-            InOutData.Open
-            InOutData.LoadFromFile %locPath%%name%
+                . "`nContent-Lenght: " FileSize
 
         } 
         Else
@@ -269,15 +277,17 @@ class DBox2
 
 
         OutputDebug % "========================= Upload Out =========================`n"
-        OutputDebug % "Search.OutHeader = " InOutHeader "`n"
-        OutputDebug % "Search.OutData = " InOutData "`n"
+        OutputDebug % "Upload.OutHeader = " InOutHeader "`n"
+        OutputDebug % "Upload.OutData = " InOutData "`n"
+        
 
-        WinHttpRequest(this.UPLOAD_URL, InOutData, InOutHeader, "Proxy:localhost:8888")
+        ; WinHttpRequest(this.UPLOAD_URL, InOutData, InOutHeader, "Proxy:localhost:8888")
+        WinHttpRequest(this.UPLOAD_URL, InOutData, InOutHeader)
         
 
         OutputDebug % "========================= Upload In =========================`n"
-        OutputDebug % "Search.InHeader = " InOutHeader "`n"
-        OutputDebug % "Search.InData = " InOutData "`n`n`n"
+        OutputDebug % "Upload.InHeader = " InOutHeader "`n"
+        OutputDebug % "Upload.InData = " InOutData "`n`n`n"
 
 
         RegExMatch(InOutHeader, "HTTP/\d\.\d\h\K\d{3}", Response)
@@ -285,6 +295,35 @@ class DBox2
         return InOutData
 
     }
+
+/****************************************************************************************
+	Method:     FileToSafeArray(fileName)
+        
+		Reads the fileName in RAW Mode and return a "Save" Array for further instructions
+        Problem was, that even FileRead, Data, *c Filename worked or File.RawRead() could
+        read the data (RawRead was doing better) the upload to the dropbox was only 400k
+        big or so. 
+
+        A big Thanks to tmplinshi with his "Google Drive API test.ahk"  
+            https://gist.github.com/tmplinshi/b81e135a87c778a5ed16d9e83017c703
+
+        There he used the FileToSafArray which also helped me out with DropBox
+
+    Parameters:
+
+        fileName        - the path inkl Filename where the file should be "converted"
+        
+	Returns:
+		An object containing am Array for further handling.
+*/
+
+    FileToSafeArray(fileName) {
+		File := FileOpen(FileName, "r")
+		safeArr := ComObjArray(0x11, File.length) ; Create SAFEARRAY = VT_ARRAY|VT_UI1
+		File.RawRead(NumGet(ComObjValue(safeArr) + 8 + A_PtrSize), File.length) ; read raw data
+		File.Close()
+		return safeArr
+	}
 
         /****************************************************************************************
 	Method: DeleteFile(path)
@@ -311,16 +350,17 @@ class DBox2
         InOutData = %DBarg%
 
 
-        OutputDebug % "========================= Upload Out =========================`n"
-        OutputDebug % "Search.OutHeader = " InOutHeader "`n"
-        OutputDebug % "Search.OutData = " InOutData "`n"
+        OutputDebug % "========================= DeleteFile Out =========================`n"
+        OutputDebug % "DeleteFile.OutHeader = " InOutHeader "`n"
+        OutputDebug % "DeleteFile.OutData = " InOutData "`n"
 
-        WinHttpRequest(this.DELETE_URL, InOutData, InOutHeader, "Proxy:localhost:8888")
+        ; WinHttpRequest(this.DELETE_URL, InOutData, InOutHeader, "Proxy:localhost:8888")
+        WinHttpRequest(this.DELETE_URL, InOutData, InOutHeader)
         
 
         OutputDebug % "========================= Upload In =========================`n"
-        OutputDebug % "Search.InHeader = " InOutHeader "`n"
-        OutputDebug % "Search.InData = " InOutData "`n`n`n"
+        OutputDebug % "DeleteFile.InHeader = " InOutHeader "`n"
+        OutputDebug % "DeleteFile.InData = " InOutData "`n`n`n"
 
 
         RegExMatch(InOutHeader, "HTTP/\d\.\d\h\K\d{3}", Response)
