@@ -48,8 +48,8 @@
             ; CreateFolder() - Creates a folder.
 */
 
-#Include ..\Lib\WinHttpRequest.ahk
-#Include ..\Lib\json.ahk
+#Include Lib\WinHttpRequest.ahk
+#Include Lib\json.ahk
 
 class DBox2
 {
