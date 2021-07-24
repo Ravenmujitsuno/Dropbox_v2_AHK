@@ -1,0 +1,4 @@
+!*.safe.hash
+*.env.safe
+*.env.*.safe
+*.env
