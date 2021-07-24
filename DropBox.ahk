@@ -7,6 +7,10 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 #Include lib\JSON.ahk
 ; #Include ParseJSON
 ; #Include common.ahk
-#Include lib\DBox2.ahk
+; #Include lib\DBox2.ahk
 
-MsgBox % "Test"
+#Include .env.def.save
+
+
+
+MsgBox % AppKey
